@@ -1,6 +1,6 @@
 package dev.leo.presenter.user.api.types
 
-import dev.leo.presenter.exceptions.BLException
+import  dev.leo.presenter.exceptions.ErrorCode
 import dev.leo.presenter.user.jpa.entities.UserEntity
 
 data class UserResponse(
@@ -16,4 +16,4 @@ fun UserEntity?.toResponseOrThrow(): UserResponse = this?.let {
         email = it.email,
         nickname = it.nickname
     )
-} ?: throw BLException("User not found")
+} ?: throw ErrorCode.USER_NOT_FOUND.toException()

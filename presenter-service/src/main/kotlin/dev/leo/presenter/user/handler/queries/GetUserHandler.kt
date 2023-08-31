@@ -10,8 +10,6 @@ import kotlin.jvm.optionals.getOrNull
 class GetUserHandler(
     private val repository: UserRepository
 ) {
-
     fun handler(email: String): UserEntity? =
         repository.findByEmail(email)
-
 }

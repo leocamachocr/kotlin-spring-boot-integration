@@ -4,12 +4,11 @@ package dev.leo.presenter.user.handler.commands
 import dev.leo.presenter.user.jpa.entities.UserEntity
 import dev.leo.presenter.user.jpa.repositories.UserRepository
 import org.springframework.stereotype.Component
-import java.util.*
 
 @Component
 class RegisterUserHandler(private val userRepository: UserRepository) {
 
-    data class Command(
+    class Command(
         val name: String,
         val email: String,
         val password: String,
@@ -21,22 +20,21 @@ class RegisterUserHandler(private val userRepository: UserRepository) {
         data object InvalidName : Result
     }
 
-    fun handle(command: Command): Result {
-        return when {
-            command.isValidName() -> Result.InvalidName
-            command.existUser() -> Result.EmailAlreadyRegistered
-            else -> Result.Success(userRepository.save(command.toEntity()))
+    fun handle(command: Command): Result =
+        with(command) {
+            when {
+                isInvalidName() -> Result.InvalidName
+                existUser() -> Result.EmailAlreadyRegistered
+                else -> Result.Success(userRepository.save(toEntity()))
+            }
         }
 
-    }
-
-    fun Command.toEntity(): UserEntity = UserEntity(
-        name = this.name,
-        email = this.email,
-        password = this.password
+    private fun Command.toEntity(): UserEntity = UserEntity(
+        name = name,
+        email = email,
+        password = password
     )
 
-    fun Command.isValidName(): Boolean = this.name.length > 3
-    fun Command.existUser(): Boolean = userRepository.countByEmail(email) > 0
-
+    private fun Command.isInvalidName(): Boolean = name.length < 3
+    private fun Command.existUser(): Boolean = userRepository.countByEmail(email) > 0
 }

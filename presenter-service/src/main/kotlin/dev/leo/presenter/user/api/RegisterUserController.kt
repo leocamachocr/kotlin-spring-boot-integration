@@ -1,7 +1,7 @@
 package dev.leo.presenter.user.api
 
 import dev.leo.presenter.user.handler.commands.RegisterUserHandler
-import dev.leo.presenter.exceptions.BLException
+import dev.leo.presenter.exceptions.ErrorCode
 import dev.leo.presenter.user.api.types.UserRegisterRequest
 import dev.leo.presenter.user.api.types.UserResponse
 import dev.leo.presenter.user.api.types.toResponseOrThrow
@@ -27,10 +27,10 @@ class RegisterUserController(
                 result.user.toResponseOrThrow()
 
             is RegisterUserHandler.Result.EmailAlreadyRegistered ->
-                throw BLException("Email is already registered")
+                throw ErrorCode.USER_ALREADY_EXISTS.toException()
 
             is RegisterUserHandler.Result.InvalidName ->
-                throw BLException("Invalid name")
+                throw ErrorCode.INVALID_NAME.toException()
         }
 
 
