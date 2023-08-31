@@ -10,5 +10,5 @@ interface UserRepository : JpaRepository<UserEntity, UUID> {
 
     fun countByEmail(email: String): Long
 
-    fun findByEmail(email: String): UserEntity?
+    fun findByEmail(email: String): Optional<UserEntity>
 }

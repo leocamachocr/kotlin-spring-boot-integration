@@ -15,26 +15,30 @@ class RegisterUserHandler(private val userRepository: UserRepository) {
     )
 
     sealed interface Result {
-        data class Success(val user: UserEntity) : Result
-        data object EmailAlreadyRegistered : Result
-        data object InvalidName : Result
+         class Success(val user: UserEntity) : Result
+         data object EmailAlreadyRegistered : Result
+         data object InvalidName : Result
     }
 
-    fun handle(command: Command): Result =
-        with(command) {
-            when {
-                isInvalidName() -> Result.InvalidName
-                existUser() -> Result.EmailAlreadyRegistered
-                else -> Result.Success(userRepository.save(toEntity()))
-            }
-        }
+    fun handle(command: Command): Result {
+        if (isInvalidName(command.name)) return Result.InvalidName
+        if (existUser(command.email)) return Result.EmailAlreadyRegistered
+        val user = UserEntity(
+            command.name,
+            command.email,
+            command.password,
+            null
+        )
+        val result = userRepository.save(user)
 
-    private fun Command.toEntity(): UserEntity = UserEntity(
-        name = name,
-        email = email,
-        password = password
-    )
+        return Result.Success(result)
+    }
 
-    private fun Command.isInvalidName(): Boolean = name.length < 3
-    private fun Command.existUser(): Boolean = userRepository.countByEmail(email) > 0
+    private fun isInvalidName(name: String): Boolean {
+        return name.length < 3
+    }
+
+    private fun existUser(email: String): Boolean {
+        return userRepository.countByEmail(email) > 0
+    }
 }

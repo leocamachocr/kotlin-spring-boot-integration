@@ -12,15 +12,20 @@ val logger: Logger = LoggerFactory.getLogger(ExceptionResponseHandler::class.jav
 @ControllerAdvice
 class ExceptionResponseHandler {
     @ExceptionHandler(BusinessException::class)
-    fun handleBusinessException(ex: BusinessException): ResponseEntity<ErrorResponse> =
-        ErrorResponse(ex.message, ex.errorCode.code)
-            .let { ResponseEntity.status(HttpStatus.BAD_REQUEST).body(it) }
-            .also { logger.error(ex.message) }
+    fun handleBusinessException(ex: BusinessException): ResponseEntity<ErrorResponse> {
+        val errorResponse = ErrorResponse(ex.message, ex.errorCode.code)
+        val result = ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse)
+        logger.error(ex.message)
+        return result
+    }
 
 
     @ExceptionHandler(Throwable::class)
-    fun handleOther(ex: Throwable): ResponseEntity<ErrorResponse> =
-        ErrorResponse(ErrorCode.UNKNOWN_ERROR.message, ErrorCode.UNKNOWN_ERROR.code)
-            .let { ResponseEntity.status(HttpStatus.BAD_REQUEST).body(it) }
-            .also { logger.error(ex.message) }
+    fun handleOther(ex: Throwable): ResponseEntity<ErrorResponse> {
+        val errorResponse = ErrorResponse(ErrorCode.UNKNOWN_ERROR.message, ErrorCode.UNKNOWN_ERROR.code)
+        val result = ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse)
+        logger.error(ex.message)
+        return result
+    }
+
 }

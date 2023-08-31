@@ -7,10 +7,10 @@ import java.util.UUID
 
 @Entity
 class UserEntity(
-    var name: String,
-    var nickname: String? = null,
-    var email: String,
-    var password: String,
+    var name: String?,
+    var email: String?,
+    var password: String?,
+    var nickname: String?,
 ) : AbstractEntity() {
     @Id
     @GeneratedValue(generator = "UUID")
