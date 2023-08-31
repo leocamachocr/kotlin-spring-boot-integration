@@ -9,7 +9,6 @@ data class UserResponse(
     val nickname: String? = null
 )
 
-
 fun UserEntity?.toResponseOrThrow(): UserResponse = this?.let {
     UserResponse(
         name = it.name,
