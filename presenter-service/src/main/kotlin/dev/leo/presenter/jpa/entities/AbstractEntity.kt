@@ -19,7 +19,7 @@ abstract class AbstractEntity {
         if (this === other) return true
         if (javaClass != other?.javaClass) return false
 
-        other as UserEntity
+        other as AbstractEntity
 
         return id == other.id
     }

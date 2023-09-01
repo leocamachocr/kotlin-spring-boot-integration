@@ -8,9 +8,9 @@ import java.util.UUID
 @Entity
 class UserEntity(
     var name: String,
-    var nickname: String? = null,
     var email: String,
     var password: String,
+    var nickname: String? = null,
 ) : AbstractEntity() {
     @Id
     @GeneratedValue(generator = "UUID")
@@ -18,6 +18,4 @@ class UserEntity(
 
     @OneToOne(fetch = FetchType.LAZY, cascade = [CascadeType.ALL])
     var configuration: UserConfigurationEntity? = null
-
-
 }

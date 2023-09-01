@@ -1,3 +1,7 @@
+---
+marp: true
+---
+
 # Kotlin and Spring Boot
 
 Considerations to achieve the best of two technologies
@@ -14,8 +18,7 @@ developers and projects alike, offering a good alternative to developer and orga
 
 ---
 
-Here, we aim to present the key points for successfully implementing a service applying good practices and keep the
-simplicity of both technologies.
+> Here, we aim to present the key points for successfully implementing a service applying good practices and keep the simplicity of both technologies.
 
 ---
 
@@ -47,7 +50,7 @@ class Dog : Animal() // It doesn't compile
 
 ```kotlin
 open class Animal // It needs to have the clause
-class Cat : Animal() 
+class Cat : Animal()
 ```
 
 ---
@@ -61,7 +64,7 @@ age += 1 //It doesn't compile
 
 ```kotlin
 var age = 34 // It needs to be modifiable
-age += 1 
+age += 1
 ```
 
 ---
@@ -125,40 +128,40 @@ value.containsNumbers()
 
 ```mermaid
 %%{init: {'theme':'neutral'}}%%
-classDiagram 
-namespace SpringBootContainer {
-    class RegisterAPI {
-    POST: /register
-    <<RestController>>
+classDiagram
+    namespace SpringBootContainer {
+        class RegisterAPI {
+            POST: /register
+            <<RestController>>
+        }
+        class LoginAPI {
+            POST: /login
+            <<RestController>>
+        }
+        class RegisterUserHandler {
+            <<Component>>
+        }
+
+        class LoginHandler {
+            <<Component>>
+        }
+        class UserRepository {
+            <<Repository>>
+        }
+        class UserEntity {
+            <<Entity>>
+        }
     }
-class LoginAPI {
-POST: /login
-<<RestController>>
-}
-class RegisterUserHandler {
-<<Component>>
-}
+    namespace DataBase {
+        class Users
+    }
 
-class LoginHandler {
-<<Component>>
-}
-class UserRepository {
-<<Repository>>
-}
-class UserEntity {
-<<Entity>>
-}
- }
-namespace DataBase {
-class Users
-}
-
-RegisterAPI ..> RegisterUserHandler
-LoginAPI ..> LoginHandler
-RegisterUserHandler ..> UserRepository
-LoginHandler ..> UserRepository
-UserRepository ..> Users
-UserRepository .. UserEntity
+    RegisterAPI ..> RegisterUserHandler
+    LoginAPI ..> LoginHandler
+    RegisterUserHandler ..> UserRepository
+    LoginHandler ..> UserRepository
+    UserRepository ..> Users
+    UserRepository .. UserEntity
 
 ```
 
@@ -179,7 +182,9 @@ UserRepository .. UserEntity
     - Invoking default constructor and extending Entities classes.
 
 ---
+
 > How to leverage Kotlin's features in Spring Boot without falling into the verbosity that the language naturally aims to eliminate?
+
 ---
 
 ### Spring Boot Creation
@@ -206,15 +211,63 @@ plugins {
 - [Check documentation here!](https://kotlinlang.org/docs/all-open-plugin.html#spring-support)
 
 ---
+
 #### plugin.jpa
+
 - It enables extensions for @Entity, @Embeddable, and @MappedSuperclass, removing the `final` clause that Kotlin introduces by default.
 - [Check documentation here!](https://kotlinlang.org/docs/no-arg-plugin.html#jpa-support)
 
 ---
 
+#### JSR 305 support
+
+- To support annotation of null safe annotation from Java and Spring, it's necessary to include the following param
+- [Check documentation here!](https://kotlinlang.org/docs/java-interop.html#jsr-305-support)
+
+```kotlin
+tasks.withType<KotlinCompile> {
+    kotlinOptions {
+        freeCompilerArgs += "-Xjsr305=strict"
+    }
+}
+```
+
+---
+
+#### Extra dependencies
+
+```kotlin
+dependencies {
+    // ...
+    implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
+    implementation("org.jetbrains.kotlin:kotlin-reflect")
+    // ...
+
+}
+```
+
+- kotlin-reflect: Used to work reflection with kotlin
+- jackson-module-kotlin: to serialize/deserialize JSON
+
+---
+
+### App Overview
+
+- This is a simple application that will contain a component that will support two operations:
+    - Register User: Post operation to register a user using name, email and password.
+    - Get all user registered: Get to retrieve all registered users.
+
+---
+
+> Go to the code
+
+---
+
 #### Basic Configuration
 
-````yaml
+For informative purposes, these are the settings we will be using for our service.
+
+```yaml
 spring:
   datasource.url: jdbc:h2:mem:testing
   jpa:
@@ -223,26 +276,212 @@ spring:
   h2.console:
     enabled: true
     path: /h2
-````
+```
 
-- [x] Create a Basic Rest
-- [x] Using Data Classes to define API Types
-    - [x] Declare Controllers
-- [x]  Using Classes for JPA Definition
-    - [x]  Declare classes and extend Abstract
-- [x]  Use null
-- [ ] safety to protect data
-    - [ ]  Declare explicit nullable fields(Using wildcard `?`)
-- [ ]  Use immutability to declare fields
-    - [ ]  Use of `val` and `var`
-- [x]  Use extensions for adapters(mappers)
-    - [x]  Declaring extension functions
-- [x]  Use name params for readability
-    - [x]  Show and example how parameter orders can be changed putting explicitly the names of params in a
-      function/constructor
-- [x]  Use scope functions
-- [x]  Use sealed interfaces
-- [ ]  Conclusions
+---
 
+#### Use Data classes
 
+- To define API models
 
+```kotlin
+data class UserRegisterRequest(
+    val email: String,
+    val name: String,
+    val password: String,
+    val nickname: String?
+)
+```
+
+---
+
+#### Using Abstract classes
+
+```kotlin
+
+@GenericGenerator(
+    name = "UUID",
+    strategy = "org.hibernate.id.UUIDGenerator"
+)
+abstract class AbstractEntity {
+
+    open val id: UUID?
+        get() {
+            return null
+        }
+
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (javaClass != other?.javaClass) return false
+        other as AbstractEntity
+        return id == other.id
+    }
+
+    override fun hashCode(): Int {
+        return id.hashCode()
+    }
+}
+```
+
+---
+
+- According to some experts [Vlad Mihalcea](https://vladmihalcea.com/how-to-implement-equals-and-hashcode-using-the-jpa-entity-identifier/) and [Thorben Jansen](https://thorben-janssen.com/ultimate-guide-to-implementing-equals-and-hashcode-with-hibernate/) its recommended to implemente equals and hashcode according to id.
+- The usage of the default methods generated by a data class could cause some inconvenients working with the ORM.
+
+---
+
+#### Using nullability
+
+```kotlin
+@Entity
+class UserEntity(
+    var name: String,
+    var email: String,
+    var password: String,
+    var nickname: String? = null,
+) : AbstractEntity() {
+    @Id
+    @GeneratedValue(generator = "UUID")
+    override lateinit var id: UUID
+
+    @OneToOne(fetch = FetchType.LAZY, cascade = [CascadeType.ALL])
+    var configuration: UserConfigurationEntity? = null
+}
+```
+
+---
+
+##### Note some important stuffs
+
+- Use of default values
+- Use of nullability (?)
+- Use of `override`
+- Lack of non-args constructor
+
+---
+
+#### Use extensions to enhance readability
+
+```kotlin
+@RestController
+class GetUserController(
+    private val handler: GetUserHandler
+) {
+    @GetMapping("/user/{email}")
+    fun getByEmail(@PathVariable email: String): UserResponse? =
+        handler.handler(email).toResponseOrThrow()
+}
+//...
+
+fun UserEntity?.toResponseOrThrow(): UserResponse = this?.let {
+    UserResponse(
+        name = it.name,
+        email = it.email,
+        nickname = it.nickname
+    )
+} ?: throw ErrorCode.USER_NOT_FOUND.toException()
+
+```
+
+---
+
+#### Use named arguments and default values
+
+```kotlin
+
+data class UserResponse(
+    val name: String,
+    val email: String,
+    val nickname: String? = null
+)
+
+fun UserEntity?.toResponseOrThrow(): UserResponse = this?.let {
+    UserResponse(
+        name = it.name,
+        nickname = it.nickname,
+        email = it.email
+    )
+} ?: throw ErrorCode.USER_NOT_FOUND.toException()
+
+```
+---
+- It makes more descriptive code
+- It can reduce the creation of other code like Builder Pattern.
+
+---
+
+#### Use scope functions
+
+Instead of this
+
+```kotlin
+    @ExceptionHandler(BusinessException::class)
+fun handleBusinessException(ex: BusinessException): ResponseEntity<ErrorResponse> {
+    val errorResponse = ErrorResponse(ex.message, ex.errorCode.code)
+    val result = ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse)
+    logger.error(ex.message)
+    return result
+}
+```
+
+Use this
+
+```kotlin
+    fun handleBusinessException(ex: BusinessException): ResponseEntity<ErrorResponse> =
+    ErrorResponse(ex.message, ex.errorCode.code)
+        .let { ResponseEntity.status(HttpStatus.BAD_REQUEST).body(it) }
+        .also { logger.error(ex.message) }
+```
+
+---
+
+#### Use sealed interfaces for function responses
+
+This
+
+```kotlin
+   sealed interface Result {
+    data class Success(val user: UserEntity) : Result
+    data object EmailAlreadyRegistered : Result
+    data object InvalidName : Result
+}
+```
+
+---
+
+Can be used as
+
+```kotlin
+
+@PostMapping("/register")
+fun register(@RequestBody user: UserRegisterRequest): UserResponse =
+    when (val result = handler.handle(
+        RegisterUserHandler.Command(
+            name = user.name,
+            email = user.email,
+            password = user.password
+        )
+    )) {
+        is RegisterUserHandler.Result.Success -> result.user.toResponseOrThrow()
+
+        is RegisterUserHandler.Result.EmailAlreadyRegistered -> throw ErrorCode.USER_ALREADY_EXISTS.toException()
+
+        is RegisterUserHandler.Result.InvalidName -> throw ErrorCode.INVALID_NAME.toException()
+    }
+```
+
+---
+
+## Conclusions
+
+- Kotlin is an excellent alternative for working with Spring Boot.
+- The transition from Java to Kotlin can be relatively straightforward, but fully leveraging all of its features may take some time to become accustomed to.
+- There are a few minor details that may be challenging to grasp, but the benefits make it worthwhile.
+
+---
+
+## References
+
+- Spring Guides. "Understanding Generated App." GitHub. https://github.com/spring-guides/tut-spring-boot-kotlin#understanding-generated-app, 2023
+- Vlad Mihalcea. "How to Implement equals and hashCode using the JPA Entity Identifier." https://vladmihalcea.com/how-to-implement-equals-and-hashcode-using-the-jpa-entity-identifier/, 2023
+- Thorben Janssen. "Ultimate Guide to Implementing equals and hashCode with Hibernate." https://thorben-janssen.com/ultimate-guide-to-implementing-equals-and-hashcode-with-hibernate/, 2023
