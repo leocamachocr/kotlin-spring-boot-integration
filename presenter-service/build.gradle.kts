@@ -12,6 +12,8 @@ plugins {
 // TODO User allOpen to be compatible with hibernate
 allOpen {
     annotation("jakarta.persistence.Entity")
+    annotation("jakarta.persistence.Embeddable")
+    annotation("jakarta.persistence.MappedSuperclass")
 }
 
 group = "com.gl"

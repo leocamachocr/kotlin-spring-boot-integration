@@ -2,7 +2,7 @@
 marp: true
 ---
 
-# Kotlin and Spring Boot
+# Spring Boot with Kotlin: Best Practices and Integration Tips
 
 Considerations to achieve the best of two technologies
 
@@ -10,11 +10,9 @@ Considerations to achieve the best of two technologies
 
 ## Intro
 
-Spring Boot stands as one of the most substantial frameworks for web development, involving multiples technologies,
-including microservices. On the other hand, Kotlin emerges as a modern language that not only embraces novel features
-but also significantly diminishes verbosity. It's wildly adopted in other technologies like mobile, and an increasing
-integration into various other domains. The combination of these two technologies presents a great opportunity for
-developers and projects alike, offering a good alternative to developer and organizations.
+Spring Boot stands as one of the most substantial frameworks for web development, involving multiples technologies, including microservices.  
+On the other hand, Kotlin emerges as a modern language that not only embraces novel features but also significantly diminishes verbosity. It's wildly adopted in other technologies like mobile, and an increasing integration into various other domains.  
+The combination of these two technologies presents a great opportunity for developers and projects alike, offering a good alternative to developer and organizations.
 
 ---
 
@@ -36,8 +34,11 @@ developers and projects alike, offering a good alternative to developer and orga
 - Created by JetBrains
 - Created with the purpose of be concise and legible.
 - Multiplatform
+- Integration with Java
 
-  Let's highlight some important features that we are going to refer later.
+---
+
+## Let's highlight some important features that we are going to refer later.
 
 ---
 
@@ -106,6 +107,9 @@ class Person {
 
 ```kotlin
 fun String.containsNumbers(): Boolean = this.contains("[0-9]")
+```
+
+```kotlin
 val value = "Hello"
 value.containsNumbers()
 ```
@@ -134,15 +138,15 @@ classDiagram
             POST: /register
             <<RestController>>
         }
-        class LoginAPI {
-            POST: /login
+        class AnotherAPI {
+            POST: /anotherEndpoint
             <<RestController>>
         }
         class RegisterUserHandler {
             <<Component>>
         }
 
-        class LoginHandler {
+        class AnotherHandler {
             <<Component>>
         }
         class UserRepository {
@@ -156,12 +160,12 @@ classDiagram
         class Users
     }
 
-    RegisterAPI ..> RegisterUserHandler
-    LoginAPI ..> LoginHandler
-    RegisterUserHandler ..> UserRepository
-    LoginHandler ..> UserRepository
-    UserRepository ..> Users
-    UserRepository .. UserEntity
+  RegisterAPI ..> RegisterUserHandler
+  AnotherAPI ..> AnotherHandler
+  RegisterUserHandler ..> UserRepository
+  AnotherHandler ..> UserRepository
+  UserRepository ..> Users
+  UserRepository .. UserEntity
 
 ```
 
@@ -179,7 +183,7 @@ classDiagram
 
 - By default SB uses Hibernate as ORM
 - It uses reflection to create instance of entities.
-    - Invoking default constructor and extending Entities classes.
+  - Invoking default constructor and extending Entities classes.
 
 ---
 
@@ -205,6 +209,8 @@ plugins {
 }
 ```
 
+---
+
 #### plugin.spring
 
 - It enables extensions for @Configuration and @Service, removing the `final` clause that Kotlin introduces by default.
@@ -216,6 +222,24 @@ plugins {
 
 - It enables extensions for @Entity, @Embeddable, and @MappedSuperclass, removing the `final` clause that Kotlin introduces by default.
 - [Check documentation here!](https://kotlinlang.org/docs/no-arg-plugin.html#jpa-support)
+
+---
+
+#### Enable lazy loading
+
+```kotlin
+plugins {
+  //...
+  kotlin("plugin.allopen") version "1.9.0"
+}
+allOpen {
+    annotation("jakarta.persistence.Entity")
+    annotation("jakarta.persistence.Embeddable")
+    annotation("jakarta.persistence.MappedSuperclass")
+}
+```
+
+To enable lazy loading to work as expected, it is required to implement the 'all open' plugin. This might seem a bit unusual because the 'plugin.jpa' is essentially a wrapper for enabling these three annotations precisely.
 
 ---
 
@@ -254,8 +278,8 @@ dependencies {
 ### App Overview
 
 - This is a simple application that will contain a component that will support two operations:
-    - Register User: Post operation to register a user using name, email and password.
-    - Get all user registered: Get to retrieve all registered users.
+  - Register User: Post operation to register a user using name, email and password.
+  - Get all user registered: Get to retrieve all registered users.
 
 ---
 
@@ -282,7 +306,8 @@ spring:
 
 #### Use Data classes
 
-- To define API models
+- Data classes are helpful when you need to handle read-only information; their default implementation makes them perfect to be used in multiple APIs of the language, such as lists and streams.
+
 
 ```kotlin
 data class UserRegisterRequest(
@@ -325,8 +350,9 @@ abstract class AbstractEntity {
 
 ---
 
-- According to some experts [Vlad Mihalcea](https://vladmihalcea.com/how-to-implement-equals-and-hashcode-using-the-jpa-entity-identifier/) and [Thorben Jansen](https://thorben-janssen.com/ultimate-guide-to-implementing-equals-and-hashcode-with-hibernate/) its recommended to implemente equals and hashcode according to id.
-- The usage of the default methods generated by a data class could cause some inconvenients working with the ORM.
+- According to experts like[Vlad Mihalcea](https://vladmihalcea.com/how-to-implement-equals-and-hashcode-using-the-jpa-entity-identifier/) and [Thorben Jansen](https://thorben-janssen.com/ultimate-guide-to-implementing-equals-and-hashcode-with-hibernate/), it is recommended to implement equals and hashCode based on the ID.
+- The usage of the default methods generated by a data class could lead to some inconveniences when working with the ORM.
+- Another important point recommended is to manage the ID generator with Hibernate. Otherwise, if it is set, Hibernate will check if the record exists in the database, even if it is a new record.
 
 ---
 
@@ -353,10 +379,10 @@ class UserEntity(
 
 ##### Note some important stuffs
 
-- Use of default values
-- Use of nullability (?)
-- Use of `override`
-- Lack of non-args constructor
+- Usage of default values.
+- Usage of nullability (?) to identify optional fields.
+- The override implementation is made explicitly to avoid confusion about the origin of the value.
+- Lack of non-args constructor: Empty constructors are not required since this feature is covered by the plugin described previously.
 
 ---
 
@@ -382,6 +408,9 @@ fun UserEntity?.toResponseOrThrow(): UserResponse = this?.let {
 } ?: throw ErrorCode.USER_NOT_FOUND.toException()
 
 ```
+---
+
+Use extensions to group some behavior into a unit of work. In this example, we are combining the extension feature with wildcards for nulls. It doesn't matter what the handler function returns; the extension is already handling null responses, throwing a customized exception.
 
 ---
 
@@ -404,9 +433,10 @@ fun UserEntity?.toResponseOrThrow(): UserResponse = this?.let {
 } ?: throw ErrorCode.USER_NOT_FOUND.toException()
 
 ```
+
 ---
-- It makes more descriptive code
-- It can reduce the creation of other code like Builder Pattern.
+
+Named arguments help you make code more readable. They also allow you to place arguments in an order that depends on the context.
 
 ---
 
@@ -432,6 +462,10 @@ Use this
         .let { ResponseEntity.status(HttpStatus.BAD_REQUEST).body(it) }
         .also { logger.error(ex.message) }
 ```
+---
+
+Scope functions are useful when you want to narrow the scope of a value within a limited block of code. In this case, the first block of code creates some one-time-use variables. The other block does the exact same thing but uses a scope function, reducing the number of declared variables and generating readable code.
+
 
 ---
 
@@ -468,6 +502,26 @@ fun register(@RequestBody user: UserRegisterRequest): UserResponse =
 
         is RegisterUserHandler.Result.InvalidName -> throw ErrorCode.INVALID_NAME.toException()
     }
+```
+---
+
+Scope functions are useful when you want to narrow the scope of a value within a limited block of code. In this case, the first block of code creates some one-time-use variables. The other block does the exact same thing but uses a scope function, reducing the number of declared variables and generating readable code.
+
+---
+
+#### It makes Optional optional
+
+- Optional doesn't make sense anymore with null-safety code
+
+```kotlin
+@Repository
+interface UserRepository : JpaRepository<UserEntity, UUID> {
+
+    fun countByEmail(email: String): Long
+
+    fun findByEmail(email: String): UserEntity?
+}
+
 ```
 
 ---
