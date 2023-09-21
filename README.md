@@ -130,9 +130,9 @@ value.containsNumbers()
 ---
 
 ```mermaid
-%%{init: {'theme':'neutral'}}%%
+
 classDiagram
-    namespace SpringBootContainer {
+   
         class RegisterAPI {
             POST: /register
             <<RestController>>
@@ -154,16 +154,11 @@ classDiagram
         class UserEntity {
             <<Entity>>
         }
-    }
-    namespace DataBase {
-        class Users
-    }
-
+    
   RegisterAPI ..> RegisterUserHandler
   GetUserAPI ..> GeetUserHandler
   RegisterUserHandler ..> UserRepository
   GeetUserHandler ..> UserRepository
-  UserRepository ..> Users
   UserRepository .. UserEntity
 
 ```
