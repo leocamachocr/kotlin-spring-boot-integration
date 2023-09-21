@@ -1,6 +1,3 @@
----
-marp: true
----
 
 # Spring Boot with Kotlin: Best Practices and Integration Tips
 
@@ -100,6 +97,8 @@ class Person {
 
 }
 ```
+---
+Alternatively, you can define a variable as nullable or non-nullable to keep data secure. This will help avoid Null Pointer Exceptions because it's validated at compilation time. By default, all variables are non-null. If you want to make a class nullable, just add the wildcard ?.
 
 ---
 
@@ -138,7 +137,7 @@ classDiagram
             POST: /register
             <<RestController>>
         }
-        class AnotherAPI {
+        class GetUserAPI {
             POST: /anotherEndpoint
             <<RestController>>
         }
@@ -146,7 +145,7 @@ classDiagram
             <<Component>>
         }
 
-        class AnotherHandler {
+        class GeetUserHandler {
             <<Component>>
         }
         class UserRepository {
@@ -161,9 +160,9 @@ classDiagram
     }
 
   RegisterAPI ..> RegisterUserHandler
-  AnotherAPI ..> AnotherHandler
+  GetUserAPI ..> GeetUserHandler
   RegisterUserHandler ..> UserRepository
-  AnotherHandler ..> UserRepository
+  GeetUserHandler ..> UserRepository
   UserRepository ..> Users
   UserRepository .. UserEntity
 
@@ -539,3 +538,4 @@ interface UserRepository : JpaRepository<UserEntity, UUID> {
 - Spring Guides. "Understanding Generated App." GitHub. https://github.com/spring-guides/tut-spring-boot-kotlin#understanding-generated-app, 2023
 - Vlad Mihalcea. "How to Implement equals and hashCode using the JPA Entity Identifier." https://vladmihalcea.com/how-to-implement-equals-and-hashcode-using-the-jpa-entity-identifier/, 2023
 - Thorben Janssen. "Ultimate Guide to Implementing equals and hashCode with Hibernate." https://thorben-janssen.com/ultimate-guide-to-implementing-equals-and-hashcode-with-hibernate/, 2023
+- Leonardo Camacho "Kotlin Best Practices for Java Developers". Gorilla Logic. https://gorillalogic.com/blog/kotlin-best-practices-for-java-developers

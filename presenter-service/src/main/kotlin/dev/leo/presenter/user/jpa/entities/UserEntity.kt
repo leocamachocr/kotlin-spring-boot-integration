@@ -10,7 +10,7 @@ class UserEntity(
     var name: String,
     var email: String,
     var password: String,
-    var nickname: String? = null,
+    var nickname: String? = "none",
 ) : AbstractEntity() {
     @Id
     @GeneratedValue(generator = "UUID")
@@ -18,4 +18,18 @@ class UserEntity(
 
     @OneToOne(fetch = FetchType.LAZY, cascade = [CascadeType.ALL])
     var configuration: UserConfigurationEntity? = null
+
+}
+
+fun createUser(name:String ="None"){
+    createUser()
+    createUser("")
+    val user = UserEntity(
+        name = "123quesito",
+        email = "Leonardo",
+        password = "Leo",
+        nickname = "leo@email.com",
+    )
+
+
 }
